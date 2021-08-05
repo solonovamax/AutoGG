@@ -1,8 +1,7 @@
 package club.sk1er.mods.autogg.handlers.patterns;
 
-import java.util.ArrayList;
+
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
 
@@ -12,7 +11,7 @@ import java.util.regex.Pattern;
  * @author ChachyDev
  */
 public class PatternHandler {
-    public static PatternHandler INSTANCE = new PatternHandler();
+    public static final PatternHandler INSTANCE = new PatternHandler();
 
     private final Map<String, Pattern> patternCache = new HashMap<>();
 

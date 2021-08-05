@@ -28,7 +28,7 @@ public class AutoGGHandler {
     
     @SubscribeEvent
     public void onEntityJoinWorld(EntityJoinWorldEvent event) {
-        if (event.entity == Minecraft.getMinecraft().thePlayer && AutoGG.INSTANCE.getAutoGGConfig().isModEnabled()) {
+        if (event.entity == Minecraft.getMinecraft().thePlayer && AutoGG.INSTANCE.getAutoGGConfig().isAutoGGEnabled()) {
             Multithreading.runAsync(() -> {
                 for (Server triggerServer : AutoGG.INSTANCE.getTriggers().getServers()) {
                     try {
@@ -52,8 +52,8 @@ public class AutoGGHandler {
         String stripped = EnumChatFormatting.getTextWithoutFormattingCodes(event.message.getUnformattedText());
         
         Server currentServer = this.server;
-        
-        if (AutoGG.INSTANCE.getAutoGGConfig().isModEnabled() && currentServer != null) {
+    
+        if (AutoGG.INSTANCE.getAutoGGConfig().isAutoGGEnabled() && currentServer != null) {
             for (Trigger trigger : currentServer.getTriggers()) {
                 switch (trigger.getType()) {
                     case ANTI_GG:
