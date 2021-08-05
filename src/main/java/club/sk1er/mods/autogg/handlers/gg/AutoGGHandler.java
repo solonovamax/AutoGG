@@ -62,7 +62,7 @@ public class AutoGGHandler {
             for (Trigger trigger : currentServer.getTriggers()) {
                 switch (trigger.getType()) {
                     case ANTI_GG:
-                        if (autoGG.getAutoGGConfig().isAntiGGEnabled()) {
+                        if (autoGG.getAutoGGConfig().isAntiGGEnabled()) { // TODO: 2021-08-05 Why are the triggers not compiled in advance?
                             if (autoGG.getPatternHandler().getOrRegisterPattern(trigger.getPattern()).matcher(stripped).matches()) {
                                 event.setCanceled(true);
                                 return;
