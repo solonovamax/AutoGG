@@ -18,6 +18,7 @@
 
 package club.sk1er.autogg.listener;
 
+
 import club.sk1er.autogg.AutoGG;
 import club.sk1er.autogg.config.AutoGGConfig;
 import club.sk1er.mods.core.universal.ChatColor;
@@ -32,19 +33,92 @@ import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.network.FMLNetworkEvent;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
+
 public class AutoGGListener {
-    private boolean invoked, deferGG, useDelay, mineplex;
-
+    private static final Random random = new Random();
+    
+    private static String[] autoGGPhrases;
+    
+    private static String[] autoGGPhrases2;
+    
     private final Pattern mineplexPattern = Pattern.compile("^(?:us|eu\\.)?mineplex\\.com$");
-
+    
+    private boolean invoked;
+    
+    private boolean deferGG;
+    
+    private boolean useDelay;
+    
+    private boolean mineplex;
+    
+    public AutoGGListener() {
+        try {
+            autoGGPhrases = AutoGGConfig.class.getDeclaredField("autoGGPhrase")
+                                              .getAnnotation(Property.class)
+                                              .options();
+        } catch (NoSuchFieldException e) {
+            AutoGG.instance.getLogger().error("autoGGPhrase does not exist.", e);
+        }
+        
+        try {
+            autoGGPhrases2 = AutoGGConfig.class.getDeclaredField("autoGGPhrase2")
+                                               .getAnnotation(Property.class)
+                                               .options();
+        } catch (NoSuchFieldException e) {
+            AutoGG.instance.getLogger().error("autoGGPhrase does not exist.", e);
+        }
+    }
+    
+    public static void switchTriggerset() {
+        AutoGG.instance.getDataFromDownloadedTriggers();
+        Multithreading.schedule(() -> {
+            if (!AutoGG.instance.works()) {
+                MinecraftUtils.sendMessage(AutoGG.instance.getPrefix(), ChatColor.RED + "" + ChatColor.BOLD +
+                                                                        (!AutoGG.validConfigVersion
+                                                                         ?
+                                                                         "WARNING! Unsupported AutoGG version! Please update AutoGG or it will not work!"
+                                                                         :
+                                                                         "Warning! Failed fetching triggers! Check your internet connection, and try running " +
+                                                                         "/autogg refresh")
+                                          );
+            }
+        }, 300, TimeUnit.MILLISECONDS);
+    }
+    
+    @NotNull
+    public static String[] getStrings(boolean second) {
+        try {
+            return AutoGGConfig.class.getDeclaredField("autoGGPhrase" + (second ? "2" : ""))
+                                     .getAnnotation(Property.class).options();
+        } catch (NoSuchFieldException e) {
+            AutoGG.instance.getLogger().error("autoGGPhrase{} does not exist.", second ? "2" : "", e);
+            return new String[0];
+        }
+    }
+    
+    public static String getFirstAutoGGMessage() {
+        int phrase = AutoGG.instance.getAutoGGConfig().getAutoGGPhrase();
+        if (phrase >= 0 && phrase < autoGGPhrases.length) {
+            return autoGGPhrases[phrase];
+        } else { // invalid config
+            throw new RuntimeException("An unknown error occurred parsing config. Try deleting " +
+                                       ".minecraft/config/autogg.toml or contacting the mod authors.");
+        }
+    }
+    
+    public static String getSecondAutoGGMessage() {
+        return AutoGG.secondaryGGStrings[random.nextInt(AutoGG.secondaryGGStrings.length)];
+    }
+    
     @SubscribeEvent
     public void switchTriggersetWrapper(FMLNetworkEvent.ClientConnectedToServerEvent event) {
         switchTriggerset();
     }
-
+    
     @SubscribeEvent
     public void worldSwap(WorldEvent.Load event) {
         invoked = false; // we can set it on Load since it always follows a load, unless the player disconnects
@@ -58,38 +132,40 @@ public class AutoGGListener {
             String scoreboardTitle;
             try { // this always fails on mineplex but doesn't really matter ¯\_(ツ)_/¯
                 scoreboardTitle = EnumChatFormatting.getTextWithoutFormattingCodes(event.world.getScoreboard()
-                        .getObjectiveInDisplaySlot(1).getDisplayName());
+                                                                                              .getObjectiveInDisplaySlot(1)
+                                                                                              .getDisplayName());
             } catch (Exception e) {
                 end();
-                deferGG = useDelay = false;
+                deferGG = false;
+                useDelay = false;
                 return;
             }
-
+            
             deferGG = "HOLE IN THE WALL".equals(scoreboardTitle) || "CAPTURE THE WOOL".equals(scoreboardTitle);
             useDelay = "SPEED UHC".equals(scoreboardTitle) || "PIXEL PAINTERS".equals(scoreboardTitle);
-
-
+            
+            
             end();
         }, 300, TimeUnit.MILLISECONDS);
     }
-
+    
     @SubscribeEvent // this is where the magic happens
     public void onChat(ClientChatReceivedEvent event) {
         String unformattedText = EnumChatFormatting.getTextWithoutFormattingCodes(
                 event.message.getUnformattedText());
-
+        
         if (AutoGG.instance.getAutoGGConfig().isAntiKarmaEnabled() &&
-                AutoGG.otherRegexes.get("anti_karma").matcher(unformattedText).matches()) {
+            AutoGG.otherRegexes.get("anti_karma").matcher(unformattedText).matches()) {
             event.setCanceled(true);
             return;
         }
-
+        
         if (invoked && AutoGG.instance.getAutoGGConfig().isAntiGGEnabled() &&
-                AutoGG.otherRegexes.get("antigg").matcher(unformattedText).matches()) {
+            AutoGG.otherRegexes.get("antigg").matcher(unformattedText).matches()) {
             event.setCanceled(true);
             return;
         }
-
+        
         if (!AutoGG.instance.isRunning()) {
             if (AutoGG.instance.getAutoGGConfig().isCasualAutoGGEnabled()) {
                 for (Pattern trigger : AutoGG.ggRegexes.get("casual_triggers")) {
@@ -106,7 +182,7 @@ public class AutoGGListener {
                     }
                 }
             }
-
+            
             if (AutoGG.instance.getAutoGGConfig().isAutoGGEnabled()) {
                 for (Pattern trigger : AutoGG.ggRegexes.get("triggers")) {
                     if (trigger.matcher(unformattedText).matches()) {
@@ -123,22 +199,24 @@ public class AutoGGListener {
             }
         }
     }
-
+    
     private void sayGG(boolean doSecond, int addedTime) {
         Multithreading.schedule(() -> {
             try {
-                Minecraft.getMinecraft().thePlayer.sendChatMessage(
-                        AutoGG.other.get("msg") + getString(false)
-                );
+                Minecraft.getMinecraft()
+                        .thePlayer
+                        .sendChatMessage(String.format("%s%s", AutoGG.other.get("msg"), getFirstAutoGGMessage()));
                 if (AutoGG.instance.getAutoGGConfig().isSecondaryEnabled() && doSecond) {
                     Multithreading.schedule(() -> {
                         try {
-                            Minecraft.getMinecraft().thePlayer.sendChatMessage(
-                                    AutoGG.other.get("msg") + getString(true)
-                            );
+                            Minecraft.getMinecraft()
+                                    .thePlayer
+                                    .sendChatMessage(String.format("%s%s", AutoGG.other.get("msg"), getSecondAutoGGMessage()));
                         } catch (RuntimeException e) {
-                            MinecraftUtils.sendMessage(AutoGG.instance.getPrefix(), ChatColor.RED +
-                                    "An error occurred getting secondary string. Check logs for more information.");
+                            MinecraftUtils.sendMessage(AutoGG.instance.getPrefix(),
+                                                       String.format(
+                                                               "%sAn error occurred getting secondary string. Check logs for more information.",
+                                                               ChatColor.RED));
                             AutoGG.instance.getLogger().error("Failed to get secondary string.", e);
                         } finally {
                             end();
@@ -146,8 +224,9 @@ public class AutoGGListener {
                     }, AutoGG.instance.getAutoGGConfig().getSecondaryDelay() + 10 + (mineplex ? 590 : 0), TimeUnit.MILLISECONDS);
                 }
             } catch (RuntimeException e) {
-                MinecraftUtils.sendMessage(AutoGG.instance.getPrefix(), ChatColor.RED +
-                        "An error occurred getting primary string. Check logs for more information.");
+                MinecraftUtils.sendMessage(AutoGG.instance.getPrefix(),
+                                           String.format("%sAn error occurred getting primary string. Check logs for more information.",
+                                                         ChatColor.RED));
                 AutoGG.instance.getLogger().error("Failed to get primary string.", e);
             } catch (Exception e) {
                 AutoGG.instance.getLogger().error("Failed to send AutoGG messages.", e);
@@ -156,21 +235,7 @@ public class AutoGGListener {
             }
         }, AutoGG.instance.getAutoGGConfig().getAutoGGDelay() + addedTime + (mineplex ? 3000 : 0), TimeUnit.MILLISECONDS);
     }
-
-    public static void switchTriggerset() {
-        AutoGG.instance.getDataFromDownloadedTriggers();
-        Multithreading.schedule(() -> {
-            if (!AutoGG.instance.works()) {
-                MinecraftUtils.sendMessage(AutoGG.instance.getPrefix(), ChatColor.RED + "" + ChatColor.BOLD +
-                        (!AutoGG.validConfigVersion ?
-                                "WARNING! Unsupported AutoGG version! Please update AutoGG or it will not work!" :
-                                "Warning! Failed fetching triggers! Check your internet connection, and try running " +
-                                        "/autogg refresh")
-                );
-            }
-        }, 300, TimeUnit.MILLISECONDS);
-    }
-
+    
     private void end() {
         try {
             Thread.sleep(2000L);
@@ -178,28 +243,5 @@ public class AutoGGListener {
             e.printStackTrace();
         }
         AutoGG.instance.setRunning(false);
-    }
-
-    @NotNull
-    public static String[] getStrings(boolean second) {
-        try {
-            return AutoGGConfig.class.getDeclaredField("autoGGPhrase" + (second ? "2" : ""))
-                .getAnnotation(Property.class).options();
-        } catch (NoSuchFieldException e) {
-            AutoGG.instance.getLogger().error("autoGGPhrase" + (second ? "2" : "") + " does not exist.", e);
-            return new String[0];
-        }
-    }
-
-    @NotNull
-    public static String getString(boolean second) {
-        int phrase = second ? AutoGG.instance.getAutoGGConfig().getAutoGGPhrase2() : AutoGG.instance.getAutoGGConfig().getAutoGGPhrase();
-        String[] strings = getStrings(second);
-        if (phrase >= 0 && phrase < strings.length) {
-            return strings[phrase];
-        } else { // invalid config
-            throw new RuntimeException("An unknown error occurred parsing config. Try deleting " +
-                    ".minecraft/config/autogg.toml or contacting the mod authors.");
-        }
     }
 }
