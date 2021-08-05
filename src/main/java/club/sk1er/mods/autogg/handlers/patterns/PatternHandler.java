@@ -1,9 +1,12 @@
 package club.sk1er.mods.autogg.handlers.patterns;
 
 
+import club.sk1er.mods.autogg.AutoGG;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Pattern;
+
 
 /**
  * Helper for compiling Regular Expressions on startup to prevent them being compiled on each chat message.
@@ -11,22 +14,26 @@ import java.util.regex.Pattern;
  * @author ChachyDev
  */
 public class PatternHandler {
-    public static final PatternHandler INSTANCE = new PatternHandler();
-
+    private final AutoGG autoGG;
+    
     private final Map<String, Pattern> patternCache = new HashMap<>();
-
+    
+    public PatternHandler(AutoGG autoGG) {
+        this.autoGG = autoGG;
+    }
+    
+    public void clearPatterns() {
+        patternCache.clear();
+    }
+    
     public Pattern getOrRegisterPattern(String pattern) {
-        String processedPattern = PlaceholderAPI.INSTANCE.process(pattern);
-
+        String processedPattern = autoGG.getPlaceholderAPI().process(pattern);
+        
         Pattern p = patternCache.get(processedPattern);
         if (p == null) {
             p = patternCache.put(processedPattern, Pattern.compile(processedPattern));
         }
-
+        
         return p;
-    }
-
-    public void clearPatterns() {
-        patternCache.clear();
     }
 }

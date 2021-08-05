@@ -2,7 +2,6 @@ package club.sk1er.mods.autogg.handlers.gg;
 
 
 import club.sk1er.mods.autogg.AutoGG;
-import club.sk1er.mods.autogg.handlers.patterns.PatternHandler;
 import club.sk1er.mods.autogg.tasks.data.Server;
 import club.sk1er.mods.autogg.tasks.data.Trigger;
 import gg.essential.api.utils.Multithreading;
@@ -23,16 +22,22 @@ import java.util.concurrent.TimeUnit;
  * @author ChachyDev
  */
 public class AutoGGHandler {
+    private final AutoGG autoGG;
+    
     @Nullable
     private volatile Server server;
     
+    public AutoGGHandler(AutoGG autoGG) {
+        this.autoGG = autoGG;
+    }
+    
     @SubscribeEvent
     public void onEntityJoinWorld(EntityJoinWorldEvent event) {
-        if (event.entity == Minecraft.getMinecraft().thePlayer && AutoGG.INSTANCE.getAutoGGConfig().isAutoGGEnabled()) {
+        if (event.entity == Minecraft.getMinecraft().thePlayer && autoGG.getAutoGGConfig().isAutoGGEnabled()) {
             Multithreading.runAsync(() -> {
-                for (Server triggerServer : AutoGG.INSTANCE.getTriggers().getServers()) {
+                for (Server triggerServer : autoGG.getTriggers().getServers()) {
                     try {
-                        if (triggerServer.getDetectionHandler().getDetector().detect(triggerServer.getData())) {
+                        if (triggerServer.getDetector().detect(triggerServer.getData())) {
                             this.server = triggerServer;
                             return;
                         }
@@ -40,7 +45,7 @@ public class AutoGGHandler {
                         // Stop log spam
                     }
                 }
-    
+                
                 // In case if it's not null and we couldn't find the triggers for the current server.
                 server = null;
             });
@@ -50,23 +55,23 @@ public class AutoGGHandler {
     @SubscribeEvent
     public void onClientChatReceived(ClientChatReceivedEvent event) {
         String stripped = EnumChatFormatting.getTextWithoutFormattingCodes(event.message.getUnformattedText());
-        
+    
         Server currentServer = this.server;
     
-        if (AutoGG.INSTANCE.getAutoGGConfig().isAutoGGEnabled() && currentServer != null) {
+        if (autoGG.getAutoGGConfig().isAutoGGEnabled() && currentServer != null) {
             for (Trigger trigger : currentServer.getTriggers()) {
                 switch (trigger.getType()) {
                     case ANTI_GG:
-                        if (AutoGG.INSTANCE.getAutoGGConfig().isAntiGGEnabled()) {
-                            if (PatternHandler.INSTANCE.getOrRegisterPattern(trigger.getPattern()).matcher(stripped).matches()) {
+                        if (autoGG.getAutoGGConfig().isAntiGGEnabled()) {
+                            if (autoGG.getPatternHandler().getOrRegisterPattern(trigger.getPattern()).matcher(stripped).matches()) {
                                 event.setCanceled(true);
                                 return;
                             }
                         }
                         break;
                     case ANTI_KARMA:
-                        if (AutoGG.INSTANCE.getAutoGGConfig().isAntiKarmaEnabled()) {
-                            if (PatternHandler.INSTANCE.getOrRegisterPattern(trigger.getPattern()).matcher(stripped).matches()) {
+                        if (autoGG.getAutoGGConfig().isAntiKarmaEnabled()) {
+                            if (autoGG.getPatternHandler().getOrRegisterPattern(trigger.getPattern()).matcher(stripped).matches()) {
                                 event.setCanceled(true);
                                 return;
                             }
@@ -80,15 +85,15 @@ public class AutoGGHandler {
                 for (Trigger trigger : currentServer.getTriggers()) {
                     switch (trigger.getType()) {
                         case NORMAL:
-                            if (PatternHandler.INSTANCE.getOrRegisterPattern(trigger.getPattern()).matcher(stripped).matches()) {
+                            if (autoGG.getPatternHandler().getOrRegisterPattern(trigger.getPattern()).matcher(stripped).matches()) {
                                 invokeGG();
                                 return;
                             }
                             break;
-                        
+    
                         case CASUAL:
-                            if (AutoGG.INSTANCE.getAutoGGConfig().isCasualAutoGGEnabled()) {
-                                if (PatternHandler.INSTANCE.getOrRegisterPattern(trigger.getPattern()).matcher(stripped).matches()) {
+                            if (autoGG.getAutoGGConfig().isCasualAutoGGEnabled()) {
+                                if (autoGG.getPatternHandler().getOrRegisterPattern(trigger.getPattern()).matcher(stripped).matches()) {
                                     invokeGG();
                                     return;
                                 }
@@ -106,23 +111,23 @@ public class AutoGGHandler {
         
         if (currentServer != null) {
             String prefix = currentServer.getMessagePrefix();
-            
-            String ggMessage = AutoGG.getPrimaryGGMessage();
-            int delay = AutoGG.INSTANCE.getAutoGGConfig().getAutoGGDelay();
-            
+    
+            String ggMessage = autoGG.getPrimaryGGMessage();
+            int delay = autoGG.getAutoGGConfig().getAutoGGDelay();
+    
             Multithreading.schedule(() -> {
                 EntityPlayerSP player = Minecraft.getMinecraft().thePlayer;
-                
+        
                 player.sendChatMessage(prefix.isEmpty() ? ggMessage : String.format("%s %s", prefix, ggMessage));
             }, delay, TimeUnit.SECONDS);
-            
-            if (AutoGG.INSTANCE.getAutoGGConfig().isSecondaryEnabled()) {
-                String secondGGMessage = AutoGG.getRandomSecondaryGGMessage();
-                int secondaryDelay = AutoGG.INSTANCE.getAutoGGConfig().getSecondaryDelay();
-                
+    
+            if (autoGG.getAutoGGConfig().isSecondaryEnabled()) {
+                String secondGGMessage = autoGG.getRandomSecondaryGGMessage();
+                int secondaryDelay = autoGG.getAutoGGConfig().getSecondaryDelay();
+        
                 Multithreading.schedule(() -> {
                     EntityPlayerSP player = Minecraft.getMinecraft().thePlayer;
-                    
+            
                     player.sendChatMessage(prefix.isEmpty() ? ggMessage : String.format("%s %s", prefix, secondGGMessage));
                 }, secondaryDelay, TimeUnit.SECONDS);
             }

@@ -22,6 +22,7 @@ package club.sk1er.mods.autogg;
 import club.sk1er.mods.autogg.command.AutoGGCommand;
 import club.sk1er.mods.autogg.config.AutoGGConfig;
 import club.sk1er.mods.autogg.handlers.gg.AutoGGHandler;
+import club.sk1er.mods.autogg.handlers.patterns.PatternHandler;
 import club.sk1er.mods.autogg.handlers.patterns.PlaceholderAPI;
 import club.sk1er.mods.autogg.tasks.RetrieveTriggersTask;
 import club.sk1er.mods.autogg.tasks.data.TriggersSchema;
@@ -107,9 +108,9 @@ public class AutoGG {
             "Have a good day!"
     };
     
-    @Mod.Instance
-    @SuppressWarnings({ "StaticVariableMayNotBeInitialized", "StaticNonFinalField" })
-    public static AutoGG INSTANCE;
+    private final PlaceholderAPI placeholderAPI;
+    
+    private final PatternHandler patternHandler;
     
     private TriggersSchema triggers = null;
     
@@ -118,26 +119,17 @@ public class AutoGG {
     @SuppressWarnings("BooleanVariableAlwaysNegated")
     private boolean usingEnglish = false;
     
+    public AutoGG() {
+        this.placeholderAPI = new PlaceholderAPI();
+        this.patternHandler = new PatternHandler(this);
+    }
+    
     public static String[] getSecondaryGGStrings() {
         return secondaryGGStrings;
     }
     
     public static String[] getPrimaryGGStrings() {
         return primaryGGStrings;
-    }
-    
-    @SuppressWarnings("StaticVariableUsedBeforeInitialization")
-    public static String getPrimaryGGMessage() {
-        return primaryGGStrings[INSTANCE.autoGGConfig.getAutoGGPhrase()];
-    }
-    
-    @SuppressWarnings("StaticVariableUsedBeforeInitialization")
-    public static String getSecondaryGGMessage() {
-        return oldSecondaryGGStrings[INSTANCE.autoGGConfig.getAutoGGPhrase2()];
-    }
-    
-    public static String getRandomSecondaryGGMessage() {
-        return secondaryGGStrings[random.nextInt(secondaryGGStrings.length)];
     }
     
     @Mod.EventHandler
@@ -149,17 +141,17 @@ public class AutoGG {
     public void onFMLInitialization(FMLInitializationEvent event) {
         autoGGConfig = new AutoGGConfig();
         autoGGConfig.preload();
-        
+    
         Collection<String> joined = new HashSet<>();
         joined.addAll(Arrays.asList(primaryGGStrings));
         joined.addAll(Arrays.asList(oldSecondaryGGStrings));
-        
-        PlaceholderAPI.INSTANCE.registerPlaceHolder("antigg_strings", String.join("|", joined));
-        
-        Multithreading.runAsync(new RetrieveTriggersTask());
-        MinecraftForge.EVENT_BUS.register(new AutoGGHandler());
-        EssentialAPI.getCommandRegistry().registerCommand(new AutoGGCommand());
-        
+    
+        placeholderAPI.registerPlaceHolder("antigg_strings", String.join("|", joined));
+    
+        Multithreading.runAsync(new RetrieveTriggersTask(this));
+        MinecraftForge.EVENT_BUS.register(new AutoGGHandler(this));
+        EssentialAPI.getCommandRegistry().registerCommand(new AutoGGCommand(this));
+    
         // fix settings that were moved from milliseconds instead of seconds
         // so users aren't waiting 5000 seconds to send GG
         if (autoGGConfig.getAutoGGDelay() > 5) autoGGConfig.setAutoGGDelay(1);
@@ -184,6 +176,22 @@ public class AutoGG {
         this.usingEnglish = "ENGLISH".equals(language);
     }
     
+    public PlaceholderAPI getPlaceholderAPI() {
+        return placeholderAPI;
+    }
+    
+    public String getPrimaryGGMessage() {
+        return primaryGGStrings[autoGGConfig.getAutoGGPhrase()];
+    }
+    
+    public String getSecondaryGGMessage() {
+        return oldSecondaryGGStrings[autoGGConfig.getAutoGGPhrase2()];
+    }
+    
+    public String getRandomSecondaryGGMessage() {
+        return secondaryGGStrings[random.nextInt(secondaryGGStrings.length)];
+    }
+    
     public TriggersSchema getTriggers() {
         return triggers;
     }
@@ -194,5 +202,9 @@ public class AutoGG {
     
     public AutoGGConfig getAutoGGConfig() {
         return autoGGConfig;
+    }
+    
+    public PatternHandler getPatternHandler() {
+        return patternHandler;
     }
 }
