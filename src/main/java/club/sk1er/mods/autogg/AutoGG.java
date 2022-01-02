@@ -124,9 +124,13 @@ public class AutoGG {
     };
     
     private static final String[] oldSecondaryGGStrings = {
-            "<3",
+            "Have a good day!",
             "AutoGG By Sk1er!",
-            "Have a good day!"
+            "gf",
+            "Good Fight",
+            "Good Round",
+            "Well played!",
+            "wp"
     };
     
     private final PlaceholderAPI placeholderAPI;
@@ -137,11 +141,8 @@ public class AutoGG {
     
     private AutoGGConfig autoGGConfig;
     
-    @SuppressWarnings("BooleanVariableAlwaysNegated")
     private boolean usingEnglish = false;
-    static {
-        System.out.println("AutoGG Class Loaded");
-    }
+    
     public AutoGG() {
         this.placeholderAPI = new PlaceholderAPI();
         this.patternHandler = new PatternHandler(this);
