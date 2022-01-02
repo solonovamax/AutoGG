@@ -27,6 +27,8 @@ public class AutoGGHandler {
     @Nullable
     private volatile Server server;
     
+    private long lastGG = 0;
+    
     public AutoGGHandler(AutoGG autoGG) {
         this.autoGG = autoGG;
     }
@@ -46,7 +48,7 @@ public class AutoGGHandler {
                     }
                 }
                 
-                // In case if it's not null and we couldn't find the triggers for the current server.
+                // In case if it's not null, and we couldn't find the triggers for the current server.
                 server = null;
             });
         }
@@ -54,6 +56,7 @@ public class AutoGGHandler {
     
     @SubscribeEvent
     public void onClientChatReceived(ClientChatReceivedEvent event) {
+        if (event.type == 2) return;
         String stripped = EnumChatFormatting.getTextWithoutFormattingCodes(event.message.getUnformattedText());
     
         Server currentServer = this.server;
@@ -62,7 +65,7 @@ public class AutoGGHandler {
             for (Trigger trigger : currentServer.getTriggers()) {
                 switch (trigger.getType()) {
                     case ANTI_GG:
-                        if (autoGG.getAutoGGConfig().isAntiGGEnabled()) { // TODO: 2021-08-05 Why are the triggers not compiled in advance?
+                        if (autoGG.getAutoGGConfig().isAntiGGEnabled()) {
                             if (autoGG.getPatternHandler().getOrRegisterPattern(trigger.getPattern()).matcher(stripped).matches()) {
                                 event.setCanceled(true);
                                 return;
@@ -81,7 +84,6 @@ public class AutoGGHandler {
             }
             
             Multithreading.runAsync(() -> {
-                // Casual GG feature
                 for (Trigger trigger : currentServer.getTriggers()) {
                     switch (trigger.getType()) {
                         case NORMAL:
@@ -90,8 +92,7 @@ public class AutoGGHandler {
                                 return;
                             }
                             break;
-    
-                        case CASUAL:
+                        case CASUAL: // Casual GG feature
                             if (autoGG.getAutoGGConfig().isCasualAutoGGEnabled()) {
                                 if (autoGG.getPatternHandler().getOrRegisterPattern(trigger.getPattern()).matcher(stripped).matches()) {
                                     invokeGG();
@@ -112,10 +113,17 @@ public class AutoGGHandler {
         if (currentServer != null) {
             String prefix = currentServer.getMessagePrefix();
     
+            if (System.currentTimeMillis() - lastGG < 10_000)
+                return;
+            lastGG = System.currentTimeMillis();
+    
             String ggMessage = autoGG.getPrimaryGGMessage();
             int delay = autoGG.getAutoGGConfig().getAutoGGDelay();
     
             Multithreading.schedule(() -> {
+                if (currentServer != this.server) // if the server has changed
+                    return;
+        
                 EntityPlayerSP player = Minecraft.getMinecraft().thePlayer;
         
                 player.sendChatMessage(prefix.isEmpty() ? ggMessage : String.format("%s %s", prefix, ggMessage));
@@ -123,9 +131,12 @@ public class AutoGGHandler {
     
             if (autoGG.getAutoGGConfig().isSecondaryEnabled()) {
                 String secondGGMessage = autoGG.getRandomSecondaryGGMessage();
-                int secondaryDelay = autoGG.getAutoGGConfig().getSecondaryDelay();
+                int secondaryDelay = autoGG.getAutoGGConfig().getSecondaryDelay() + autoGG.getAutoGGConfig().getAutoGGDelay();
         
                 Multithreading.schedule(() -> {
+                    if (currentServer != this.server) // if the server has changed
+                        return;
+            
                     EntityPlayerSP player = Minecraft.getMinecraft().thePlayer;
             
                     player.sendChatMessage(prefix.isEmpty() ? ggMessage : String.format("%s %s", prefix, secondGGMessage));

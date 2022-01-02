@@ -48,11 +48,41 @@ import java.util.Random;
  *
  * @author ChachyDev
  */
-@Mod(modid = "autogg", name = "AutoGG", version = "4.1.0")
+@Mod(modid = "autogg", name = "AutoGG", version = "4.1.3")
 public class AutoGG {
     private static final Random random = new Random();
     
+    private static final String[] primaryGGStrings = { "gg", "GG", "gf", "Good Game", "Good Fight", "Good Round! :D" };
+    
     private static final String[] secondaryGGStrings = {
+            "AutoGG By Sk1er!",
+            "AutoGG By Sk1er, with modifications by solonovamax!",
+            "gf",
+            ":D",
+            "Meow :3",
+            "Layla is my cutie <3",
+            "Trans Rights!",
+            "Trans rights are human rights",
+            "Be gay, do crimes",
+            "I am very gay :3",
+            "Imagine being a c*shet",
+            ":3",
+            "I'm gay and emotionally unavailable",
+            "Oh, you're straight? Sounds kinda cringe to me",
+            "There are 93 genders, and every time you complain we add 2 more.",
+            // "Do your handlers know you're on the internet unsupervised?",
+            // "How the fuck did they get a computer into the monkey enclosure?",
+            // "Sorry for your loss, people ain't the best when angry.",
+            // "Close fight",
+            // "You'd think you're playing fortnite with how you build a whole ass hotel in 0.5 seconds.",
+            // "Go back to fortnite.",
+            // "If the human body is 75% water, how can you be 100% salt?",
+            // "Even a quadriplegic sloth is mechanically better than you",
+            // "Your family tree looks more like a ladder.",
+            // "More does not mean better, as seen by the number of your chromosomes",
+            // "I bet you eat toothpaste.",
+            //"Who's Joe?",
+            // "DN",
             "Have a good day!",
             "<3",
             "AutoGG By Sk1er!",
@@ -93,15 +123,6 @@ public class AutoGG {
             "Give me a sec, gotta recharge the gay."
     };
     
-    private static final String[] primaryGGStrings = {
-            "gf",
-            "gg",
-            "GG",
-            "Good Game",
-            "Good Fight",
-            "Good Round! :D"
-    };
-    
     private static final String[] oldSecondaryGGStrings = {
             "<3",
             "AutoGG By Sk1er!",
@@ -118,7 +139,9 @@ public class AutoGG {
     
     @SuppressWarnings("BooleanVariableAlwaysNegated")
     private boolean usingEnglish = false;
-    
+    static {
+        System.out.println("AutoGG Class Loaded");
+    }
     public AutoGG() {
         this.placeholderAPI = new PlaceholderAPI();
         this.patternHandler = new PatternHandler(this);
@@ -169,27 +192,24 @@ public class AutoGG {
         }
     }
     
-    private void checkUserLanguage() {
-        final String username = Minecraft.getMinecraft().getSession().getUsername();
-        final JsonHolder json = WebUtil.fetchJSON("https://api.sk1er.club/player/" + username);
-        final String language = json.optJSONObject("player").defaultOptString("userLanguage", "ENGLISH");
-        this.usingEnglish = "ENGLISH".equals(language);
-    }
-    
-    public PlaceholderAPI getPlaceholderAPI() {
-        return placeholderAPI;
+    public PatternHandler getPatternHandler() {
+        return patternHandler;
     }
     
     public String getPrimaryGGMessage() {
         return primaryGGStrings[autoGGConfig.getAutoGGPhrase()];
     }
     
-    public String getSecondaryGGMessage() {
-        return oldSecondaryGGStrings[autoGGConfig.getAutoGGPhrase2()];
-    }
-    
     public String getRandomSecondaryGGMessage() {
         return secondaryGGStrings[random.nextInt(secondaryGGStrings.length)];
+    }
+    
+    public AutoGGConfig getAutoGGConfig() {
+        return autoGGConfig;
+    }
+    
+    public PlaceholderAPI getPlaceholderAPI() {
+        return placeholderAPI;
     }
     
     public TriggersSchema getTriggers() {
@@ -200,11 +220,10 @@ public class AutoGG {
         this.triggers = triggers;
     }
     
-    public AutoGGConfig getAutoGGConfig() {
-        return autoGGConfig;
-    }
-    
-    public PatternHandler getPatternHandler() {
-        return patternHandler;
+    private void checkUserLanguage() {
+        final String username = Minecraft.getMinecraft().getSession().getUsername();
+        final JsonHolder json = WebUtil.fetchJSON("https://api.sk1er.club/player/" + username);
+        final String language = json.optJSONObject("player").defaultOptString("userLanguage", "ENGLISH");
+        this.usingEnglish = "ENGLISH".equals(language);
     }
 }

@@ -11,16 +11,21 @@ import gg.essential.api.utils.GuiUtil;
 import gg.essential.api.utils.Multithreading;
 import gg.essential.universal.ChatColor;
 import gg.essential.universal.wrappers.message.UTextComponent;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.Objects;
 
 
 public class AutoGGCommand extends Command {
+    private static final Logger logger = LogManager.getLogger(AutoGGCommand.class);
+    
     private final AutoGG autoGG;
     
     public AutoGGCommand(AutoGG autoGG) {
         super("autogg");
         this.autoGG = autoGG;
+        logger.info("AutoGG Command initialized");
     }
     
     @DefaultHandler

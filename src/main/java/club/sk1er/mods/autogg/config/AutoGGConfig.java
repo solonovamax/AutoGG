@@ -42,7 +42,7 @@ public class AutoGGConfig extends Vigilant {
             type = PropertyType.SLIDER, name = "Delay",
             description = "Delay after the game ends to say the message.\n§eMeasured in seconds.",
             category = "General", subcategory = "General",
-            max = 5
+            max = 8
     )
     private int autoGGDelay = 1;
     
@@ -56,24 +56,16 @@ public class AutoGGConfig extends Vigilant {
     
     @Property(
             type = PropertyType.SWITCH, name = "Second Message",
-            description = "Enable a secondary message to send after your first GG.",
+            description = "Enable a secondary message to send after your first GG. The message is randomized.",
             category = "General", subcategory = "Secondary Message"
     )
     private boolean secondaryEnabled;
     
     @Property(
-            type = PropertyType.SELECTOR, name = "Phrase",
-            description = "Send a secondary message sent after the first GG message.",
-            category = "General", subcategory = "Secondary Message",
-            options = { "Have a good day!", "<3", "AutoGG By Sk1er!" }
-    )
-    private int autoGGPhrase2 = 0;
-    
-    @Property(
             type = PropertyType.SLIDER, name = "Second Message Delay",
             description = "Delay between the first & second end of game messages.\n§eMeasured in seconds.",
             category = "General", subcategory = "Secondary Message",
-            max = 5
+            max = 8
     )
     private int secondaryDelay = 1;
     
@@ -112,10 +104,6 @@ public class AutoGGConfig extends Vigilant {
     
     public boolean isSecondaryEnabled() {
         return secondaryEnabled;
-    }
-    
-    public int getAutoGGPhrase2() {
-        return autoGGPhrase2;
     }
     
     public int getSecondaryDelay() {
