@@ -58,9 +58,9 @@ public class AutoGGHandler {
     public void onClientChatReceived(ClientChatReceivedEvent event) {
         if (event.type == 2) return;
         String stripped = EnumChatFormatting.getTextWithoutFormattingCodes(event.message.getUnformattedText());
-    
+        
         Server currentServer = this.server;
-    
+        
         if (autoGG.getAutoGGConfig().isAutoGGEnabled() && currentServer != null) {
             for (Trigger trigger : currentServer.getTriggers()) {
                 switch (trigger.getType()) {
@@ -112,33 +112,33 @@ public class AutoGGHandler {
         
         if (currentServer != null) {
             String prefix = currentServer.getMessagePrefix();
-    
+            
             if (System.currentTimeMillis() - lastGG < 10_000)
                 return;
             lastGG = System.currentTimeMillis();
-    
+            
             String ggMessage = autoGG.getPrimaryGGMessage();
             int delay = autoGG.getAutoGGConfig().getAutoGGDelay();
-    
+            
             Multithreading.schedule(() -> {
                 if (currentServer != this.server) // if the server has changed
                     return;
-        
+                
                 EntityPlayerSP player = Minecraft.getMinecraft().thePlayer;
-        
+                
                 player.sendChatMessage(prefix.isEmpty() ? ggMessage : String.format("%s %s", prefix, ggMessage));
             }, delay, TimeUnit.SECONDS);
-    
+            
             if (autoGG.getAutoGGConfig().isSecondaryEnabled()) {
                 String secondGGMessage = autoGG.getRandomSecondaryGGMessage();
                 int secondaryDelay = autoGG.getAutoGGConfig().getSecondaryDelay() + autoGG.getAutoGGConfig().getAutoGGDelay();
-        
+                
                 Multithreading.schedule(() -> {
                     if (currentServer != this.server) // if the server has changed
                         return;
-            
+                    
                     EntityPlayerSP player = Minecraft.getMinecraft().thePlayer;
-            
+                    
                     player.sendChatMessage(prefix.isEmpty() ? ggMessage : String.format("%s %s", prefix, secondGGMessage));
                 }, secondaryDelay, TimeUnit.SECONDS);
             }
