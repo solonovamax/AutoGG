@@ -141,7 +141,7 @@ public class AutoGG {
     
     private AutoGGConfig autoGGConfig;
     
-    private boolean usingEnglish = false;
+    private boolean notUsingEnglish = true;
     
     public AutoGG() {
         this.placeholderAPI = new PlaceholderAPI();
@@ -184,7 +184,7 @@ public class AutoGG {
     
     @Mod.EventHandler
     public void loadComplete(FMLLoadCompleteEvent event) {
-        if (!usingEnglish) {
+        if (notUsingEnglish) {
             EssentialAPI.getNotifications()
                         .push("AutoGG",
                               "We've detected your Hypixel language is not set to English! AutoGG will not work on other languages.\n" +
@@ -225,6 +225,6 @@ public class AutoGG {
         final String username = Minecraft.getMinecraft().getSession().getUsername();
         final JsonHolder json = WebUtil.fetchJSON("https://api.sk1er.club/player/" + username);
         final String language = json.optJSONObject("player").defaultOptString("userLanguage", "ENGLISH");
-        this.usingEnglish = "ENGLISH".equals(language);
+        this.notUsingEnglish = !"ENGLISH".equalsIgnoreCase(language);
     }
 }
