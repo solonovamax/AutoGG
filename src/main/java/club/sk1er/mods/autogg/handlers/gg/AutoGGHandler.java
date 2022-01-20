@@ -38,8 +38,6 @@ public class AutoGGHandler {
     @SubscribeEvent
     public void onEntityJoinWorld(EntityJoinWorldEvent event) {
         if (event.entity == Minecraft.getMinecraft().thePlayer && autoGG.getAutoGGConfig().isAutoGGEnabled()) {
-            System.out.println("World has changed, cancelling queued GGs.");
-            
             cancelNextGG = true; // The current world has changed
             
             Multithreading.runAsync(() -> {
@@ -98,7 +96,7 @@ public class AutoGGHandler {
                             if (autoGG.getPatternHandler().getOrRegisterPattern(trigger.getPattern()).matcher(stripped).matches()) {
                                 cancelNextGG = false; // Possibly invoking GG
     
-                                invokeGG();
+                                invokeGG(false);
                                 return;
                             }
                             break;
@@ -107,7 +105,7 @@ public class AutoGGHandler {
                                 if (autoGG.getPatternHandler().getOrRegisterPattern(trigger.getPattern()).matcher(stripped).matches()) {
                                     cancelNextGG = false; // Possibly invoking GG
     
-                                    invokeGG();
+                                    invokeGG(true);
                                     return;
                                 }
                             }
@@ -118,20 +116,20 @@ public class AutoGGHandler {
         }
     }
     
-    private void invokeGG() {
+    private void invokeGG(boolean isCasual) {
         // Better safe than sorry
         Server currentServer = server;
-    
+        
         if (!cancelNextGG && currentServer != null) {
             String prefix = currentServer.getMessagePrefix();
-        
+            
             if (System.currentTimeMillis() - lastGG < 10_000)
                 return;
             lastGG = System.currentTimeMillis();
-        
+            
             String ggMessage = autoGG.getPrimaryGGMessage();
             int delay = autoGG.getAutoGGConfig().getAutoGGDelay();
-        
+            
             Multithreading.schedule(() -> {
                 if (cancelNextGG) // if the server has changed
                     return;
@@ -142,15 +140,18 @@ public class AutoGGHandler {
             }, delay, TimeUnit.SECONDS);
             
             if (autoGG.getAutoGGConfig().isSecondaryEnabled()) {
+                if (isCasual && !autoGG.getAutoGGConfig().isCasualSecondaryGG())
+                    return;
+    
                 String secondGGMessage = autoGG.getRandomSecondaryGGMessage();
                 int secondaryDelay = autoGG.getAutoGGConfig().getSecondaryDelay() + autoGG.getAutoGGConfig().getAutoGGDelay();
-                
+    
                 Multithreading.schedule(() -> {
                     if (cancelNextGG) // if the server has changed 
                         return;
-                    
+        
                     EntityPlayerSP player = Minecraft.getMinecraft().thePlayer;
-                    
+        
                     player.sendChatMessage(prefix.isEmpty() ? ggMessage : String.format("%s %s", prefix, secondGGMessage));
                 }, secondaryDelay, TimeUnit.SECONDS);
             }

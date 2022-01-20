@@ -69,13 +69,20 @@ public class AutoGGConfig extends Vigilant {
     )
     private int secondaryDelay = 1;
     
+    @Property(
+            type = PropertyType.SWITCH, name = "Casual Secondary GG",
+            description = "Send secondary message for casual AutoGG triggers",
+            category = "General", subcategory = "Secondary Message"
+    )
+    private boolean casualSecondaryGG = false;
+    
     public AutoGGConfig() {
         super(new File("./config/autogg.toml"));
         initialize();
     }
     
-    public void setAutoGGDelay(int autoGGDelay) {
-        this.autoGGDelay = autoGGDelay;
+    public boolean isCasualSecondaryGG() {
+        return casualSecondaryGG;
     }
     
     public boolean isCasualAutoGGEnabled() {
@@ -92,6 +99,10 @@ public class AutoGGConfig extends Vigilant {
     
     public int getAutoGGDelay() {
         return autoGGDelay;
+    }
+    
+    public void setAutoGGDelay(int autoGGDelay) {
+        this.autoGGDelay = autoGGDelay;
     }
     
     public boolean isAutoGGEnabled() {
